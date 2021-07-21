@@ -33,6 +33,7 @@ DOCUMENTATION = '''
                - name: delegated_vars['ansible_ssh_host']
       host_key_checking:
           description: Determines if ssh should check host keys
+          default: True
           type: boolean
           ini:
               - section: defaults
@@ -167,9 +168,9 @@ DOCUMENTATION = '''
               version_added: '2.7'
           cli:
             - name: ssh_extra_args
-      retries:
+      reconnection_retries:
           description: Number of attempts to connect.
-          default: 3
+          default: 0
           type: integer
           env:
             - name: ANSIBLE_SSH_RETRIES
@@ -453,7 +454,7 @@ def _ssh_retry(func):
     """
     @wraps(func)
     def wrapped(self, *args, **kwargs):
-        remaining_tries = int(self.get_option('retries')) + 1
+        remaining_tries = int(self.get_option('reconnection_retries')) + 1
         cmd_summary = u"%s..." % to_text(args[0])
         conn_password = self.get_option('password') or self._play_context.password
         for attempt in range(remaining_tries):
@@ -692,7 +693,7 @@ class Connection(ConnectionBase):
             self._add_args(b_command, b_args, u"ansible.cfg set ssh_args")
 
         # Now we add various arguments that have their own specific settings defined in docs above.
-        if not self.get_option('host_key_checking'):
+        if self.get_option('host_key_checking') is False:
             b_args = (b"-o", b"StrictHostKeyChecking=no")
             self._add_args(b_command, b_args, u"ANSIBLE_HOST_KEY_CHECKING/host_key_checking disabled")
 

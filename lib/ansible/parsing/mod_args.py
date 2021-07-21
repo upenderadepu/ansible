@@ -26,6 +26,7 @@ from ansible.module_utils._text import to_text
 from ansible.parsing.splitter import parse_kv, split_args
 from ansible.plugins.loader import module_loader, action_loader
 from ansible.template import Templar
+from ansible.utils.collection_loader import AnsibleCollectionRef
 from ansible.utils.fqcn import add_internal_fqcns
 from ansible.utils.sentinel import Sentinel
 
@@ -120,7 +121,7 @@ class ModuleArgsParser:
         self._task_attrs.update(['local_action', 'static'])
         self._task_attrs = frozenset(self._task_attrs)
 
-        self.internal_redirect_list = []
+        self.resolved_action = None
 
     def _split_module_string(self, module_string):
         '''
@@ -269,8 +270,6 @@ class ModuleArgsParser:
         delegate_to = self._task_ds.get('delegate_to', Sentinel)
         args = dict()
 
-        self.internal_redirect_list = []
-
         # This is the standard YAML form for command-type modules. We grab
         # the args and pass them in as additional arguments, which can/will
         # be overwritten via dict updates from the other arg sources below
@@ -299,27 +298,27 @@ class ModuleArgsParser:
 
         # walk the filtered input dictionary to see if we recognize a module name
         for item, value in iteritems(non_task_ds):
+            context = None
             is_action_candidate = False
             if item in BUILTIN_TASKS:
                 is_action_candidate = True
             elif skip_action_validation:
                 is_action_candidate = True
             else:
-                # If the plugin is resolved and redirected smuggle the list of candidate names via the task attribute 'internal_redirect_list'
                 context = action_loader.find_plugin_with_context(item, collection_list=self._collection_list)
                 if not context.resolved:
                     context = module_loader.find_plugin_with_context(item, collection_list=self._collection_list)
-                    if context.resolved and context.redirect_list:
-                        self.internal_redirect_list = context.redirect_list
-                elif context.redirect_list:
-                    self.internal_redirect_list = context.redirect_list
 
-                is_action_candidate = bool(self.internal_redirect_list)
+                is_action_candidate = context.resolved and bool(context.redirect_list)
 
             if is_action_candidate:
                 # finding more than one module name is a problem
                 if action is not None:
                     raise AnsibleParserError("conflicting action statements: %s, %s" % (action, item), obj=self._task_ds)
+
+                if context is not None and context.resolved:
+                    self.resolved_action = context.resolved_fqcn
+
                 action = item
                 thing = value
                 action, args = self._normalize_parameters(thing, action=action, additional_args=additional_args)

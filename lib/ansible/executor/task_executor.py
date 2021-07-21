@@ -549,7 +549,8 @@ class TaskExecutor:
 
         # Apply default params for action/module, if present
         self._task.args = get_action_args_with_defaults(
-            self._task.action, self._task.args, self._task.module_defaults, templar, self._task._ansible_internal_redirect_list
+            self._task.resolved_action, self._task.args, self._task.module_defaults, templar,
+            action_groups=self._task._parent._play._action_groups
         )
 
         # And filter out any fields which were set to default(omit), and got the omit token value
@@ -1019,6 +1020,9 @@ class TaskExecutor:
             # step is to get connection plugins pulling the password through the
             # config system instead of directly accessing play_context.
             task_keys['password'] = self._play_context.password
+
+        # Prevent task retries from overriding connection retries
+        del(task_keys['retries'])
 
         # set options with 'templated vars' specific to this plugin and dependent ones
         self._connection.set_options(task_keys=task_keys, var_options=options)

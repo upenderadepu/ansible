@@ -1632,6 +1632,15 @@ MAX_FILE_SIZE_FOR_DIFF:
   ini:
   - {key: max_diff_size, section: defaults}
   type: int
+JINJA2_NATIVE_WARNING:
+  name: Running older than required Jinja version for jinja2_native warning
+  default: True
+  description: Toggle to control showing warnings related to running a Jinja version
+               older than required for jinja2_native
+  env: [{name: ANSIBLE_JINJA2_NATIVE_WARNING}]
+  ini:
+  - {key: jinja2_native_warning, section: defaults}
+  type: boolean
 NETWORK_GROUP_MODULES:
   name: Network module families
   default: [eos, nxos, ios, iosxr, junos, enos, ce, vyos, sros, dellos9, dellos10, dellos6, asa, aruba, aireos, bigip, ironware, onyx, netconf, exos, voss, slxos]
@@ -1668,7 +1677,7 @@ MODULE_IGNORE_EXTS:
   - {key: module_ignore_exts, section: defaults}
   type: list
 OLD_PLUGIN_CACHE_CLEARING:
-  description: Previouslly Ansible would only clear some of the plugin loading caches when loading new roles, this led to some behaviours in which a plugin loaded in prevoius plays would be unexpectedly 'sticky'. This setting allows to return to that behaviour.
+  description: Previously Ansible would only clear some of the plugin loading caches when loading new roles, this led to some behaviours in which a plugin loaded in prevoius plays would be unexpectedly 'sticky'. This setting allows to return to that behaviour.
   env: [{name: ANSIBLE_OLD_PLUGIN_CACHE_CLEAR}]
   ini:
   - {key: old_plugin_cache_clear, section: defaults}
@@ -1962,6 +1971,17 @@ STRING_CONVERSION_ACTION:
     - section: defaults
       key: string_conversion_action
   type: string
+VALIDATE_ACTION_GROUP_METADATA:
+  version_added: '2.12'
+  description:
+    - A toggle to disable validating a collection's 'metadata' entry for a module_defaults action group.
+      Metadata containing unexpected fields or value types will produce a warning when this is True.
+  default: True
+  env: [{name: ANSIBLE_VALIDATE_ACTION_GROUP_METADATA}]
+  ini:
+    - section: defaults
+      key: validate_action_group_metadata
+  type: bool
 VERBOSE_TO_STDERR:
   version_added: '2.8'
   description:
